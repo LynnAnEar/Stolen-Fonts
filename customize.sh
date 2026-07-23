@@ -31,27 +31,32 @@ EOF
   FAM_FILE="$TMPDIR/my_families.xml"
 fi
 
-# 3) patch system fonts.xml safely by inserting our families before </familyset>
-SYS_FONTS_XML=/system/etc/fonts.xml
-if [ -f "$SYS_FONTS_XML" ]; then
-  ui_print "- Creating overlayed fonts.xml at $MODPATH/system/etc/fonts.xml (inserting Fredoka family)..."
-  cp -f "$SYS_FONTS_XML" "$TMPDIR/orig_fonts.xml"
-  OUT="$MODPATH/system/etc/fonts.xml"
-  awk -v add="$(sed 's/\\/\\\\/g; s/"/\\"/g; s/$/\\n/' "$FAM_FILE" | tr -d '\r' | sed ':a;N;$!ba;s/\n/\\n/g')" '
-  {
-    if ($0 ~ /<\/familyset>/ && !done) {
-      split(add, a, "\\n")
-      for (i=1;i<=length(a);i++) if (a[i] != "") print a[i]
-      done=1
-    }
-    print $0
-  }' "$TMPDIR/orig_fonts.xml" > "$OUT" || {
-    ui_print "  ! Failed to inject into fonts.xml - copying original to overlay instead."
-    cp -f "$TMPDIR/orig_fonts.xml" "$OUT"
-  }
+# --- begin robust fonts.xml injection (portable) ---
+# $ORIG_XML is the path to the device/system fonts.xml the script found
+# $MOD_ETC is the desired overlay path inside the module (e.g. "$MODPATH/system/etc/fonts.xml")
+mkdir -p "$(dirname "$MOD_ETC")"
+
+# Create overlay by copying the first part up to </familyset>
+if sed -n '1,/<\/familyset>/p' "$ORIG_XML" > "$MOD_ETC"; then
+  # Append our family block
+  cat >> "$MOD_ETC" <<'XML'
+<!-- Inserted by Open Fonts - Fredoka -->
+<family>
+  <name>Fredoka</name>
+  <font weight="400" style="normal">/system/fonts/Fredoka-Regular.ttf</font>
+</family>
+XML
+  # Append the remainder of the original file (including the closing </familyset> and beyond)
+  sed -n '/<\/familyset>/,$p' "$ORIG_XML" >> "$MOD_ETC"
 else
-  ui_print "  ! /system/etc/fonts.xml not found; skipping automatic patch. Add a fonts.xml in common/my_families.xml if needed."
+  # Fallback: copy original entirely (so we still overlay)
+  cp -a "$ORIG_XML" "$MOD_ETC"
 fi
+
+# set permissions
+chmod 644 "$MOD_ETC" || true
+chown root:root "$MOD_ETC" || true
+# --- end robust injection ---
 
 # 4) set permissions
 ui_print "- Setting permissions..."
