@@ -1,7 +1,7 @@
-id=open_fonts_name_name
-name=Open Fonts FONT_NAME
-version=1
+id=open_fonts_fredoka
+name=Open Fonts - Fredoka
+version=1.0
 versionCode=1
-author=F3FFO
-description=Open Fonts change your system fonts
+author=You
+description=Magisk module to add Fredoka font (Fredoka-Regular.ttf)
 minMagisk=20400
