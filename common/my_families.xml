@@ -1,0 +1,8 @@
+<!-- Inserted into device /system/etc/fonts.xml before </familyset> -->
+<family>
+  <name>Fredoka</name>
+  <font weight="400" style="normal">/system/fonts/Fredoka-Regular.ttf</font>
+</family>
+
+<!-- Optional: make Fredoka the default sans-serif (comment out if you don't want this) -->
+<alias name="sans-serif" to="Fredoka" />
